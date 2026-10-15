@@ -1,7 +1,7 @@
 # 💳 Transactions API — Idempotência & Rate Limiting
 
-[![CI](https://github.com/theusfeltrin/transaction-api/actions/workflows/ci.yml/badge.svg)](https://github.com/theusfeltrin/transaction-api/actions/workflows/ci.yml)
-[![Node.js](https://img.shields.io/badge/Node.js-20.x-339933?logo=node.js&logoColor=white)](https://nodejs.org)
+[![CI](https://github.com/SEU-USUARIO/transactions-api/actions/workflows/ci.yml/badge.svg)](https://github.com/SEU-USUARIO/transactions-api/actions/workflows/ci.yml)
+[![Node.js](https://img.shields.io/badge/Node.js-24.x-339933?logo=node.js&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io)
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com)
@@ -13,7 +13,7 @@ padrões essenciais de APIs financeiras/production-grade:
 - **Idempotência** via header `Idempotency-Key` — retries do cliente nunca duplicam uma operação.
 - **Rate Limiting** distribuído via Redis (sliding window log) — protege a API contra abuso.
 
-> Projeto criado para ser consumido por meu one-page de portfólio.
+> Projeto criado para ser consumido por um terminal simulado no meu one-page de portfólio.
 
 ---
 
@@ -84,7 +84,7 @@ sequenceDiagram
 
 | Camada          | Tecnologia                             |
 |------------------|-----------------------------------------|
-| Linguagem        | Node.js 20 + TypeScript 5               |
+| Linguagem        | Node.js 24 + TypeScript 5               |
 | Framework HTTP   | Express                                 |
 | Banco de dados   | Supabase (PostgreSQL)                   |
 | Cache / Locks    | Redis (ioredis)                         |
@@ -99,9 +99,20 @@ sequenceDiagram
 ## 🚀 Como rodar
 
 ### Pré-requisitos
-- Node.js 20+
+- Node.js 24+
 - Docker e Docker Compose
 - Uma conta [Supabase](https://supabase.com) (gratuita) com o schema em `supabase/migrations/0001_create_transactions.sql` aplicado
+
+> ⚠️ **Nota sobre projetos Supabase criados a partir de 30/05/2026:** desde essa
+> data, tabelas novas deixaram de ser automaticamente acessíveis pela Data API
+> (`anon`/`authenticated`/`service_role`) — é preciso `GRANT` explícito, senão a
+> API recebe `42501 permission denied for table transactions` na primeira
+> chamada. A migration deste projeto já inclui o `grant` necessário para
+> `service_role`. Se você criar novas tabelas depois, lembre de fazer o mesmo
+> (ou reative "Automatically expose new tables and functions" nas configurações
+> do projeto). Também usamos `gen_random_uuid()` (nativo do Postgres 13+) em vez
+> de `uuid_generate_v4()`/extensão `uuid-ossp`, que costuma falhar por questão de
+> `search_path` de schema no Supabase.
 
 ### 1. Clonar e configurar
 
@@ -109,7 +120,7 @@ sequenceDiagram
 git clone https://github.com/SEU-USUARIO/transactions-api.git
 cd transactions-api
 cp .env.example .env
-# edite o .env com sua SUPABASE_URL, SUPABASE_SECRET_KEY e uma API_KEY própria
+# edite o .env com sua SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e uma API_KEY própria
 ```
 
 ### 2. Rodar com Docker (recomendado)
@@ -222,6 +233,11 @@ transactions-api/
 
 ---
 
+## 🗺️ Roadmap (ideias futuras)
+
+- [ ] Autenticação via JWT/OAuth em vez de API key estática
+- [ ] Webhooks de notificação de status de transação
+
 ## 🔧 Manutenção de dependências
 
 Para evitar os avisos clássicos de `npm install` (`deprecated`, dependências
@@ -235,6 +251,29 @@ transitivas antigas) e reduzir superfície de vulnerabilidades:
   se surgir uma vulnerabilidade real de severidade alta ou crítica.
 - O `Dockerfile` usa `npm ci --omit=dev` no estágio de produção, então nenhuma
   `devDependency` (eslint, jest, ts-jest, etc.) vai parar na imagem final.
+
+**Decisões tomadas para eliminar os warnings originais:**
+
+| Antes | Depois | Motivo |
+|---|---|---|
+| `eslint@8` + `.eslintrc.json` | `eslint@10` + `eslint.config.js` (flat config) | ESLint 8 puxava `@humanwhocodes/*`, `rimraf@3` e `glob@7`, todos descontinuados |
+| `@typescript-eslint/*@7` (dois pacotes) | `typescript-eslint@8` (pacote unificado) | Simplifica o parser/plugin em um só pacote, compatível com ESLint 9/10 |
+| `ts-node-dev` | `tsx` | `ts-node-dev` dependia de `rimraf@2.7.1` → `glob@7` → `inflight@1.0.6` (não mantido); `tsx` é atualmente a ferramenta padrão da comunidade, sem essa cadeia legada |
+| `jest@29` | `jest@30` | Passou a usar `glob@13` internamente em vez de `glob@7` |
+| `uuid` (dependência não utilizada) | *(removida)* | O `id` da transação é gerado pelo Postgres/Supabase (`uuid_generate_v4()`); o pacote nunca era importado no código |
+
+Depois dessas mudanças, `npm install` fica só com 2 avisos residuais (de
+`swagger-jsdoc` e `babel-plugin-istanbul`, que ainda não migraram sua
+dependência interna de `glob`) — confirmados via `npm audit` como **0
+vulnerabilidades conhecidas**, inclusive em `npm audit --omit=dev` (o cenário
+real de produção).
+
+Para checar o estado das dependências a qualquer momento:
+
+```bash
+npm outdated   # o que está desatualizado
+npm audit      # vulnerabilidades conhecidas
+```
 
 ## 📄 Licença
 
