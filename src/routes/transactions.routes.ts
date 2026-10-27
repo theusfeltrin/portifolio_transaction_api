@@ -16,7 +16,7 @@ export function transactionsRouter(controller: TransactionsController): Router {
    *       repetidas com a mesma chave e mesmo corpo retornam a resposta original
    *       (replay), sem reprocessar a operação.
    *     tags: [Transactions]
-   *     security: [{ ApiKeyAuth: [] }]
+   *     security: [{ ApiKeyAuth: [], UserId: [] }]
    *     parameters:
    *       - in: header
    *         name: Idempotency-Key
@@ -37,7 +37,7 @@ export function transactionsRouter(controller: TransactionsController): Router {
    *       200:
    *         description: Replay de uma requisição idempotente já concluída anteriormente.
    *       400:
-   *         description: Payload inválido ou header Idempotency-Key ausente.
+   *         description: Payload inválido, header Idempotency-Key ausente ou x-user-id inválido.
    *       401:
    *         description: API key ausente ou inválida.
    *       409:
@@ -55,7 +55,7 @@ export function transactionsRouter(controller: TransactionsController): Router {
    *   get:
    *     summary: Busca uma transação pelo ID
    *     tags: [Transactions]
-   *     security: [{ ApiKeyAuth: [] }]
+   *     security: [{ ApiKeyAuth: [], UserId: [] }]
    *     parameters:
    *       - in: path
    *         name: id
@@ -68,7 +68,7 @@ export function transactionsRouter(controller: TransactionsController): Router {
    *           application/json:
    *             schema: { $ref: '#/components/schemas/TransactionResponse' }
    *       404:
-   *         description: Transação não encontrada.
+   *         description: Transação não encontrada (ou pertence a outro usuário).
    */
   router.get('/:id', asyncHandler(controller.getById));
 
@@ -76,9 +76,9 @@ export function transactionsRouter(controller: TransactionsController): Router {
    * @openapi
    * /transactions:
    *   get:
-   *     summary: Lista transações paginadas
+   *     summary: Lista transações paginadas do usuário
    *     tags: [Transactions]
-   *     security: [{ ApiKeyAuth: [] }]
+   *     security: [{ ApiKeyAuth: [], UserId: [] }]
    *     parameters:
    *       - in: query
    *         name: page

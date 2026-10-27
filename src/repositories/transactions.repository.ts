@@ -7,6 +7,7 @@ export class TransactionsRepository {
   constructor(private readonly db: SupabaseClient) {}
 
   async create(data: {
+    user_id: string;
     idempotency_key: string;
     type: Transaction['type'];
     amount: number;
@@ -17,6 +18,7 @@ export class TransactionsRepository {
     const { data: row, error } = await this.db
       .from(TABLE)
       .insert({
+        user_id: data.user_id,
         idempotency_key: data.idempotency_key,
         type: data.type,
         amount: data.amount,
@@ -35,8 +37,13 @@ export class TransactionsRepository {
     return row as Transaction;
   }
 
-  async findById(id: string): Promise<Transaction | null> {
-    const { data, error } = await this.db.from(TABLE).select('*').eq('id', id).maybeSingle();
+  async findById(userId: string, id: string): Promise<Transaction | null> {
+    const { data, error } = await this.db
+      .from(TABLE)
+      .select('*')
+      .eq('user_id', userId)
+      .eq('id', id)
+      .maybeSingle();
 
     if (error) {
       throw new Error(`Falha ao buscar transação: ${error.message}`);
@@ -45,10 +52,15 @@ export class TransactionsRepository {
     return (data as Transaction) ?? null;
   }
 
-  async list(params: { limit: number; offset: number }): Promise<{ items: Transaction[]; total: number }> {
+  async list(params: {
+    userId: string;
+    limit: number;
+    offset: number;
+  }): Promise<{ items: Transaction[]; total: number }> {
     const { data, error, count } = await this.db
       .from(TABLE)
       .select('*', { count: 'exact' })
+      .eq('user_id', params.userId)
       .order('created_at', { ascending: false })
       .range(params.offset, params.offset + params.limit - 1);
 

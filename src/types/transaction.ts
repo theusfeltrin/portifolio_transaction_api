@@ -3,6 +3,7 @@ export type TransactionStatus = 'PENDING' | 'COMPLETED' | 'FAILED';
 
 export interface Transaction {
   id: string;
+  user_id: string;
   idempotency_key: string;
   type: TransactionType;
   amount: number;

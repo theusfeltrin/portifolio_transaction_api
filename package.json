@@ -16,7 +16,9 @@
     "test:watch": "jest --watch",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "db:push": "supabase db push --linked",
+    "db:new": "supabase migration new"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
@@ -44,6 +46,7 @@
     "ioredis-mock": "^8.13.1",
     "jest": "^30.5.2",
     "pino-pretty": "^11.2.2",
+    "supabase": "^2.122.0",
     "supertest": "^7.0.0",
     "ts-jest": "^29.4.15",
     "tsx": "^4.23.15",

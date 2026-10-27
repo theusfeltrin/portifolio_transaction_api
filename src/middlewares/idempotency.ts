@@ -17,8 +17,10 @@ function hashPayload(payload: unknown): string {
   return createHash('sha256').update(JSON.stringify(payload ?? {})).digest('hex');
 }
 
-function keyFor(idempotencyKey: string): string {
-  return `idempotency:${idempotencyKey}`;
+// A chave é escopada por usuário: o mesmo Idempotency-Key enviado por usuários
+// diferentes não pode fazer um receber (via replay) a resposta do outro.
+function keyFor(idempotencyKey: string, userId?: string): string {
+  return userId ? `idempotency:${userId}:${idempotencyKey}` : `idempotency:${idempotencyKey}`;
 }
 
 /**
@@ -43,7 +45,7 @@ export function idempotency(redis: Redis) {
       return next();
     }
 
-    const redisKey = keyFor(idempotencyKey);
+    const redisKey = keyFor(idempotencyKey, req.userId);
     const requestHash = hashPayload(req.body);
 
     try {

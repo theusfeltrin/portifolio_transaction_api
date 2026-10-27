@@ -151,7 +151,9 @@ http://localhost:3000/docs
 
 ## 📡 Endpoints
 
-Todas as rotas abaixo exigem o header `x-api-key`.
+Todas as rotas `/api/v1/transactions` exigem os headers `x-api-key` e `x-user-id`.
+O `x-user-id` é o UUID do usuário guardado na sessão do navegador: cada transação é
+gravada com esse UUID e as consultas só retornam transações do próprio usuário.
 
 | Método | Rota                     | Descrição                                   | Headers extras                |
 |--------|---------------------------|----------------------------------------------|--------------------------------|
@@ -166,7 +168,7 @@ Todas as rotas abaixo exigem o header `x-api-key`.
 ```bash
 curl -X POST http://localhost:3000/api/v1/transactions \
   -H "Content-Type: application/json" \
-  -H "x-api-key: SUA_API_KEY" \
+  -H "x-api-key: SUA_API_KEY"   -H "x-user-id: 9b2f6c1e-7d3a-4c5b-8e9f-0a1b2c3d4e5f" \
   -H "Idempotency-Key: 3f2504e0-4f89-11ee-be56-0242ac120002" \
   -d '{
     "type": "DEPOSIT",

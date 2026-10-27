@@ -19,7 +19,13 @@ export const swaggerSpec = swaggerJsdoc({
     tags: [{ name: 'Transactions', description: 'Operações de transações financeiras' }],
     components: {
       securitySchemes: {
-        ApiKeyAuth: { type: 'apiKey', in: 'header', name: 'x-api-key' }
+        ApiKeyAuth: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+        UserId: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-user-id',
+          description: 'UUID do usuário (guardado na sessão do navegador). Escopa todas as transações.'
+        }
       },
       schemas: {
         CreateTransactionInput: {
@@ -37,6 +43,7 @@ export const swaggerSpec = swaggerJsdoc({
           type: 'object',
           properties: {
             id: { type: 'string', format: 'uuid' },
+            user_id: { type: 'string', format: 'uuid' },
             idempotency_key: { type: 'string' },
             type: { type: 'string', enum: ['DEPOSIT', 'WITHDRAWAL', 'TRANSFER'] },
             amount: { type: 'number' },
@@ -53,7 +60,7 @@ export const swaggerSpec = swaggerJsdoc({
         }
       }
     },
-    security: [{ ApiKeyAuth: [] }]
+    security: [{ ApiKeyAuth: [], UserId: [] }]
   },
   apis: ['./src/routes/*.ts', './dist/routes/*.js']
 });

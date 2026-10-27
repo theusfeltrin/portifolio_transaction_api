@@ -9,6 +9,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from './config/logger';
 import { swaggerSpec } from './docs/swagger';
 import { apiKeyAuth } from './middlewares/auth';
+import { userContext } from './middlewares/userContext';
 import { rateLimiter } from './middlewares/rateLimiter';
 import { idempotency } from './middlewares/idempotency';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
@@ -41,6 +42,7 @@ export function createApp(deps: { redis: Redis; supabase: SupabaseClient }): Exp
   app.use(
     '/api/v1/transactions',
     apiKeyAuth,
+    userContext,
     rateLimiter(redis),
     idempotency(redis),
     transactionsRouter(controller)

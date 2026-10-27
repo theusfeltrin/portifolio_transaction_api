@@ -8,6 +8,10 @@ type MockRedis = InstanceType<typeof RedisMock>;
 function buildApp(redis: MockRedis, handlerDelayMs = 0) {
   const app = express();
   app.use(express.json());
+  app.use((req, _res, next) => {
+    req.userId = req.header('x-user-id');
+    next();
+  });
   app.use(idempotency(redis));
 
   let callCount = 0;
@@ -89,5 +93,27 @@ describe('idempotency middleware', () => {
     expect(res1.status).toBe(201);
     expect(res2.status).toBe(409);
     expect(res2.body.error).toBe('IDEMPOTENT_REQUEST_IN_PROGRESS');
+  });
+
+  it('não compartilha a resposta entre usuários diferentes que usam a mesma chave', async () => {
+    const { app, getCallCount } = buildApp(redis);
+    const key = 'idem-key-shared';
+
+    const res1 = await request(app)
+      .post('/charge')
+      .set('x-user-id', 'user-a')
+      .set('Idempotency-Key', key)
+      .send({ amount: 100 });
+    const res2 = await request(app)
+      .post('/charge')
+      .set('x-user-id', 'user-b')
+      .set('Idempotency-Key', key)
+      .send({ amount: 100 });
+
+    expect(res1.status).toBe(201);
+    expect(res2.status).toBe(201);
+    expect(res2.headers['idempotent-replay']).toBeUndefined();
+    expect(res2.body.id).not.toBe(res1.body.id);
+    expect(getCallCount()).toBe(2);
   });
 });
